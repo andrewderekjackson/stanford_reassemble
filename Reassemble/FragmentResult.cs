@@ -8,7 +8,7 @@ namespace Reassemble {
 
         public int Overlap { get; set; }
 
-        public int AlignmentIndex { get; set; }
+        public int Index { get; set; }
 
     }
 }
