@@ -1,5 +1,8 @@
+using System.Diagnostics;
+
 namespace Reassemble {
 
+    [DebuggerDisplay("Overlap: {Overlap}, String1: {String1}, String2: {String2}")]
     public class FragmentResult {
 
         public string String1 { get; set; }
@@ -8,7 +11,7 @@ namespace Reassemble {
 
         public int Overlap { get; set; }
 
-        public int Index { get; set; }
+        public string MergedString { get; set; }
 
     }
 }

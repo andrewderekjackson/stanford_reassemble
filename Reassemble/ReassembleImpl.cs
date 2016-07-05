@@ -1,151 +1,137 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Reassemble {
 
     public class ReassembleImpl {
 
         /// <summary>
-        /// Calculates the offset of the two strings and returns the results.
+        /// Calculates the offset/merged result of the two strings and returns the results.
         /// </summary>
-        public int CalculateOverlap(string string1, string string2) {
+        public FragmentResult CalculateOverlap(string string1, string string2) {
 
             if (string1 == null || string2 == null) {
                 throw new ArgumentNullException("string1 or string2 cannot be null.");
             }
 
-            int maxOverlap = -1;
+            var result1 = CalculateOverlapCore(string1, string2);
+            var result2 = CalculateOverlapCore(string2, string1);
 
-            string s1 = string1.Length >= string2.Length ? string1 : string2;
-            string s2 = string1.Length >= string2.Length ? string2 : string1;
-
-            // pad the strings so we can merge using positive indexes
-            s1 = string1.PadLeft(s1.Length + s2.Length - 1);
-            s1 = s1.PadRight(s1.Length + s2.Length - 1);
-
-            for (int s1Index = 0; s1Index < s1.Length - s2.Length; s1Index++) {
-
-                bool matching = false;
-                int overlap = 0;
-
-                for (int index = 0; index < s2.Length; index++) {
-
-                    char s1char = s1[s1Index + index];
-                    char s2char = s2[index];
-
-                    if (s1char == s2char) {
-                        matching = true;
-                        overlap++;
-                    } else {
-                        if (matching) {
-                            break;
-                        }
-                    }
-                }
-
-                if (overlap > maxOverlap) {
-                    maxOverlap = overlap;
-                }
-
+            if (result1.Overlap == 0 && result2.Overlap == 0) {
+                // just merge the strings
+                result1.MergedString = result1.String1 + result1.String2;
+                return result1;
             }
 
-            return maxOverlap;
 
-
-            //// search for best match reducing from the right
-            //for (int i = string2.Length; i > 0; i--) {
-            //    string needle = string2.Substring(0, i);
-            //    int index = string1.IndexOf(needle, StringComparison.Ordinal);
-
-            //    if (index > -1) {
-            //        // matched
-            //        maxOverlap = needle.Length;
-            //        break;
-            //    }
-            //}
-
-            //// search for best match reducing from the left
-            //for (int i = 0; i < string2.Length; i++) {
-            //    string needle = string2.Substring(i);
-            //    int index = string2.IndexOf(needle, StringComparison.Ordinal);
-
-            //    if (index > -1) {
-            //        if (maxOverlap < needle.Length) {
-            //            maxOverlap = needle.Length;
-            //            break;
-            //        }
-            //    }
-            //}
-
-            //return maxOverlap;
+            if (result1.Overlap >= result2.Overlap) {
+                return result1;
+            } else {
+                return result2;
+            }
         }
 
-        public string Merge(FragmentResult result) {
-            return Merge(result.String1, result.String2);
-        }
+        internal FragmentResult CalculateOverlapCore(string string1, string string2) {
 
-        public string Merge(string string1, string string2) {
-
-            if (string1 == null || string2 == null) {
-                throw new ArgumentNullException("string1 or string2 cannot be null.");
+            // first check to see if string2 is fully contained in string1
+            if (string1.Contains(string2)) {
+                return new FragmentResult() {
+                    String1 = string1,
+                    String2 = string2,
+                    Overlap = string2.Length,
+                    MergedString = string1
+                };
             }
 
-            string origs1 = string1.Length >= string2.Length ? string1 : string2;
-            string s2 = string1.Length >= string2.Length ? string2 : string1;
+            // search for best match reducing from the right
 
-            // pad the strings so we can merge using positive indexes
-            string s1 = string1.PadLeft(origs1.Length + s2.Length - 1);
-            s1 = s1.PadRight(s1.Length + s2.Length - 1);
+            //  eg:
+            //    a b c d 
+            //          c d e f
+            //    a b c d 
+            //          d e f
 
-            int maxIndex = -1;
-            int maxOverlap = 0;
-
-            for (int s1Index = 0; s1Index < s1.Length - s2.Length; s1Index++) {
-                
-                bool matching = false;
-                int overlap = 0;
-                int matchingIndex = -1;
-
-                for (int index = 0; index < s2.Length; index++) {
-
-                    char s1char = s1[s1Index + index];
-                    char s2char = s2[index];
-
-                    if (s1char == s2char) {
-                        if (!matching) {
-                            matchingIndex = s1Index;
-                            // start
-                        }
-                        matching = true;
-                        overlap++;
-                    } else {
-                        if (matching) {
-                            // end
-                            break;
-                        }
-                    }
+            for (int i = string2.Length; i > 0; i--) {
+                string overlap = string2.Substring(0, i);
+                string rest = string2.Substring(i);
+                if (string1.EndsWith(overlap, StringComparison.InvariantCulture)) {
+                    return new FragmentResult() {
+                        String1 = string1,
+                        String2 = string2,
+                        Overlap = overlap.Length,
+                        MergedString = string1 + rest
+                    };
                 }
+            }
 
-                if (overlap > maxOverlap) {
-                    maxOverlap = overlap;
-                    maxIndex = matchingIndex;
+
+            // search for best match reducing from the left
+
+            //  eg:
+            //          c d e f 
+            //    a b c d      
+            //          c d e f 
+            //      a b c      
+
+            for (int i = 0; i < string2.Length; i++) {
+                string overlap = string2.Substring(i);
+                string rest = string2.Substring(0, i);
+                if (string1.StartsWith(overlap, StringComparison.InvariantCulture)) {
+                    return new FragmentResult() {
+                        String1 = string1,
+                        String2 = string2,
+                        Overlap = overlap.Length,
+                        MergedString = rest + string1
+                    };
                 }
             }
             
-            // apply the changes
-            StringBuilder sb = new StringBuilder(s1);
-            for (int i = 0; i < s2.Length; i++) {
-                sb[maxIndex + i] = s2[i];
+            // no overlap
+            return new FragmentResult() {
+                String1 = string1,
+                String2 = string2,
+                Overlap = 0
+            };
+
+        }
+        
+
+        public string Reassemble(string[] fragments) {
+
+            if (fragments == null || fragments.Length == 0) {
+                return string.Empty;
+            }
+            
+            List<string> input = new List<string>(fragments);
+            
+            while (input.Count > 1) {
+                Reduce(input);
             }
 
-            string result = sb.ToString().Trim();
+            return input[0];
+        }
 
-            return result;
+        private void Reduce(List<string> input){
+
+            List<FragmentResult> results = new List<FragmentResult>();
+
+            foreach (var f1 in input) {
+                foreach (var f2 in input) {
+                    if (f1 != f2) {
+                        var overlap = CalculateOverlap(f1, f2);
+                        results.Add(overlap);
+                    }
+                }
+            }
+
+            var paring = results.GroupBy(v => v.Overlap).Select(v => v.FirstOrDefault()).FirstOrDefault();
+            if (paring != null) {
+                input.Remove(paring.String1);
+                input.Remove(paring.String2);
+                input.Add(paring.MergedString);
+            }
+
         }
     }
 }
