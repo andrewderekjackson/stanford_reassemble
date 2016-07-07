@@ -125,7 +125,7 @@ namespace Reassemble {
                 }
             }
 
-            var paring = results.GroupBy(v => v.Overlap).Select(v => v.FirstOrDefault()).FirstOrDefault();
+            var paring = results.OrderByDescending(v => v.Overlap).GroupBy(v => v.Overlap).Select(v => v.FirstOrDefault()).FirstOrDefault();
             if (paring != null) {
                 input.Remove(paring.String1);
                 input.Remove(paring.String2);

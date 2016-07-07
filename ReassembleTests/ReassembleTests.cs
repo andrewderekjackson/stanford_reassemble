@@ -101,7 +101,10 @@ namespace ReassembleTests {
         }
 
         [TestMethod]
-        public void TestGitHubSample2() {
+        public void TestCase2() {
+            
+            // there are from here: https://www.codeeval.com/browse/77/
+
             var fragments =
                 "m quaerat voluptatem.;pora incidunt ut labore et d;, consectetur, adipisci velit;olore magnam aliqua;idunt ut labore et dolore magn;uptatem.;i dolorem ipsum qu;iquam quaerat vol;psum quia dolor sit amet, consectetur, a;ia dolor sit amet, conse;squam est, qui do;Neque porro quisquam est, qu;aerat voluptatem.;m eius modi tem;Neque porro qui;, sed quia non numquam ei;lorem ipsum quia dolor sit amet;ctetur, adipisci velit, sed quia non numq;unt ut labore et dolore magnam aliquam qu;dipisci velit, sed quia non numqua;us modi tempora incid;Neque porro quisquam est, qui dolorem i;uam eius modi tem;pora inc;am al"
                     .Split(';').Select(s => s.TrimStart()).ToArray();
@@ -112,6 +115,23 @@ namespace ReassembleTests {
             Assert.AreEqual(expectedResult, impl.Reassemble(fragments));
 
         }
+
+        [TestMethod]
+        public void TestCase1() {
+
+            // there are from here: https://www.codeeval.com/browse/77/
+
+            var fragments =
+                "O draconia; conian devil! Oh la; h lame sa;saint!"
+                    .Split(';').Select(s => s.TrimStart()).ToArray();
+
+            var expectedResult = "O draconian devil! Oh lame saint!";
+
+            ReassembleImpl impl = new ReassembleImpl();
+            Assert.AreEqual(expectedResult, impl.Reassemble(fragments));
+
+        }
+
 
 
     }
